@@ -24,7 +24,7 @@ main(int32_t argc, char * const *argv)
 	if ((sfd = createSocket(argv[DESTINATION], argv[PORT], 0)) < 0)
 		err(1, "createSocket");
 
-	for (i = 0; i < 3; ++i) {
+	for (i = 0; i < NUM_REQS; ++i) {
 		usleep(rand() % MAX_SLEEP);
 
 		req.op = rand() % NUM_OPS;
