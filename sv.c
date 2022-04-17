@@ -54,47 +54,49 @@ reply(void *)
 	char dst[INET_ADDRSTRLEN];
 #endif
 
-	if ((afd = acceptSocket(lfd, dst, sizeof(dst))) < 0)
-		err(1, "accept");
-
-	printf("%s %ld 0\n", dst, time(NULL));
-
 	for (;;) {
-		if (readMsg(afd, &msg))
-			break;
+		if ((afd = acceptSocket(lfd, dst, sizeof(dst))) < 0)
+			err(1, "accept");
 
-		switch (msg.op) {
-		case ADD:
-			msg.result = msg.arg1 + msg.arg2;
-			break;
-		case SUB:
-			msg.result = msg.arg1 - msg.arg2;
-			break;
-		case MUL:
-			msg.result = msg.arg1 * msg.arg2;
-			break;
-		case DIV:
-			if (msg.arg2 != 0)
-				msg.result = msg.arg1 / msg.arg2;
-			else
+		printf("%s %ld 0\n", dst, time(NULL));
+
+		for (;;) {
+			if (readMsg(afd, &msg))
+				break;
+
+			switch (msg.op) {
+			case ADD:
+				msg.result = msg.arg1 + msg.arg2;
+				break;
+			case SUB:
+				msg.result = msg.arg1 - msg.arg2;
+				break;
+			case MUL:
+				msg.result = msg.arg1 * msg.arg2;
+				break;
+			case DIV:
+				if (msg.arg2 != 0)
+					msg.result = msg.arg1 / msg.arg2;
+				else
+					msg.op = ERR;
+				break;
+			default:
 				msg.op = ERR;
-			break;
-		default:
-			msg.op = ERR;
-			break;
+				break;
+			}
+
+			if (msg.op < LEN(OP_CHARS))
+				printf("%s %d %c %d\n", dst, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+			else
+				printf("%s error", dst);
+
+			if (writeMsg(afd, msg))
+				break;
 		}
 
-		if (msg.op < LEN(OP_CHARS))
-			printf("%s %d %c %d\n", dst, msg.arg1, OP_CHARS[msg.op], msg.arg2);
-		else
-			printf("%s error", dst);
+		printf("%s %ld 1\n", dst, time(NULL));
 
-		if (writeMsg(afd, msg))
-			break;
+		close(afd);
 	}
-
-	printf("%s %ld 1\n", dst, time(NULL));
-
-	close(afd);
 	return NULL;
 }
