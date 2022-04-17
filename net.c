@@ -1,3 +1,5 @@
+#include <arpa/inet.h>
+
 #include <err.h>
 #include <errno.h>
 #include <netdb.h>
@@ -17,14 +19,13 @@ readMsg(int32_t sockfd, struct Msg *msg)
 	struct Msg *recvd;
 
 	for (i = 0; i < sizeof(buf); i += nr) {
-		if ((nr = read(sockfd, buf + i, sizeof(buf) - i)) >= 0)
+		if ((nr = read(sockfd, buf + i, sizeof(buf) - i)) > 0)
 			continue;
 
+		if (nr == 0)
+			return -1;
+
 		switch (errno) {
-		case EAGAIN: 
-#if EAGAIN != EWOULDBLOCK
-		case EWOULDBLOCK:
-#endif
 		case EINTR:
 			nr = 0;
 			continue;
@@ -37,6 +38,7 @@ readMsg(int32_t sockfd, struct Msg *msg)
 	msg->op = recvd->op;
 	msg->arg1 = recvd->arg1;
 	msg->arg2 = recvd->arg2;
+	msg->result = recvd->result;
 	return 0;
 }
 
@@ -114,20 +116,18 @@ listenSocket(const char *node, const char *service)
 
 /* return the accepted file descriptor */
 int32_t
-acceptSocket(int32_t sockfd)
+acceptSocket(int32_t sockfd, char *dst, size_t size)
 {
 	int32_t afd;
 	socklen_t addrlen;
 	struct sockaddr_storage addr;
+	struct sockaddr_in *src;
+	struct sockaddr_in6 *src6;
 
 	addrlen = sizeof(addr);
 
 	while ((afd = accept(sockfd, (struct sockaddr *)&addr, &addrlen)) < 0) {
 		switch (errno) {
-		case EAGAIN:
-#if EWOULDBLOCK != EAGAIN
-		case EWOULDBLOCK:
-#endif
 		case ECONNABORTED:
 		case EINTR:
 			warn("accept failed");
@@ -135,6 +135,21 @@ acceptSocket(int32_t sockfd)
 		default:
 			return -1;
 		}
+	}
+
+	switch(addr.ss_family) {
+	case AF_INET:
+		src = (struct sockaddr_in *)&addr;
+		if (inet_ntop(addr.ss_family, (void *)&src->sin_addr, dst, size) == NULL)
+			err(1, "inet_ntop");
+		break;
+	case AF_INET6:
+		src6 = (struct sockaddr_in6 *)&addr;
+		if (inet_ntop(addr.ss_family, (void *)&src6->sin6_addr, dst, size) == NULL)
+			err(1, "inet_ntop");
+		break;
+	default:
+		return -1;
 	}
 
 	return afd;

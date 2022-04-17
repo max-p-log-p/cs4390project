@@ -1,3 +1,5 @@
+#include <arpa/inet.h>
+
 #include <err.h>
 #include <pthread.h>
 #include <stddef.h>
@@ -45,17 +47,21 @@ void *
 reply(void *)
 {
 	int32_t afd;
-	uint64_t i;
 	struct Msg msg;
+#if INET6_ADDRSTRLEN > INET_ADDRSTRLEN
+	char dst[INET6_ADDRSTRLEN];
+#else
+	char dst[INET_ADDRSTRLEN];
+#endif
 
-	if ((afd = acceptSocket(lfd)) < 0)
+	if ((afd = acceptSocket(lfd, dst, sizeof(dst))) < 0)
 		err(1, "accept");
 
-	for (i = 0; i < NUM_REQS; ++i) {
-		if (readMsg(afd, &msg))
-			err(1, "recv");
+	printf("%s %ld 0\n", dst, time(NULL));
 
-		printMsg("msg:", msg);
+	for (;;) {
+		if (readMsg(afd, &msg))
+			break;
 
 		switch (msg.op) {
 		case ADD:
@@ -78,9 +84,16 @@ reply(void *)
 			break;
 		}
 
+		if (msg.op < LEN(OP_CHARS))
+			printf("%s %d %c %d\n", dst, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+		else
+			printf("%s error", dst);
+
 		if (writeMsg(afd, msg))
-			err(1, "writeMsg");
+			break;
 	}
+
+	printf("%s %ld 1\n", dst, time(NULL));
 
 	close(afd);
 	return NULL;
