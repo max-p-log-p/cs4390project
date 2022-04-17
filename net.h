@@ -4,7 +4,7 @@ struct Msg {
 	uint8_t op;
 	uint8_t arg1;
 	uint8_t arg2;
-	uint16_t result;
+	int32_t result;
 } __attribute__((packed));
 
 extern int32_t readMsg(int32_t, struct Msg *);

@@ -13,7 +13,7 @@ int32_t
 main(int32_t argc, char * const *argv)
 {
 	int32_t i, sfd;
-	struct Msg req;
+	struct Msg msg;
 
 	if (argc != ARGS_LEN)
 		usage(USAGE_STR);
@@ -24,17 +24,22 @@ main(int32_t argc, char * const *argv)
 	if ((sfd = createSocket(argv[DESTINATION], argv[PORT], 0)) < 0)
 		err(1, "createSocket");
 
-	for (i = 0; i < NUM_REQS + rand(); ++i) {
+	for (i = 0; i < MIN_REQS + rand(); ++i) {
 		usleep(rand() % MAX_SLEEP);
 
-		req.op = rand() % NUM_OPS;
-		req.arg1 = rand() % (2 << CHAR_BIT);
-		req.arg2 = rand() % (2 << CHAR_BIT);
+		msg.op = rand() % NUM_OPS;
+		msg.arg1 = rand() % (2 << CHAR_BIT);
+		msg.arg2 = rand() % (2 << CHAR_BIT);
 
-		printMsg("req:", req);
+		printMsg("request:", msg);
 
-		if (writeMsg(sfd, req))
+		if (writeMsg(sfd, msg))
 			err(1, "writeMsg");
+
+		if (readMsg(sfd, &msg))
+			err(1, "readMsg");
+
+		printMsg("reply:", msg);
 	}
 
 	close(sfd);

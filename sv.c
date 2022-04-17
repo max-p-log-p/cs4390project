@@ -13,12 +13,34 @@
 #include "sv.h"
 
 void *reply(void *);
+void *queue(void *);
+void pthreads_create(pthread_t *, void *(*)(void *), size_t);
+void pthreads_join(pthread_t *, size_t);
+
+void
+pthreads_create(pthread_t *threads, void *(*start_routine)(void *), size_t len)
+{
+	uint64_t i;
+	for (i = 0; i < len; ++i) {
+		if (pthread_create(&threads[i], NULL, start_routine, NULL))
+			err(1, "pthread_create");
+	}
+}
+
+void
+pthreads_join(pthread_t *threads, size_t len)
+{
+	uint64_t i;
+	for (i = 0; i < len; ++i) {
+		if (pthread_join(threads[i], NULL))
+			warn("pthread_join");
+	}
+}
 
 int32_t
 main(int32_t argc, char * const *argv)
 {
-	uint64_t i;
-	pthread_t repliers[NUM_CLIENTS];
+	pthread_t queuers[NUM_CLIENTS], repliers[NUM_CLIENTS];
 
 	if (argc != ARGS_LEN)
 		usage(USAGE_STR);
@@ -27,16 +49,12 @@ main(int32_t argc, char * const *argv)
 	if ((lfd = listenSocket(NULL, argv[PORT])) < 0)
 		err(1, "listenSocket");
 
-	for (i = 0; i < LEN(repliers); ++i) {
-		if (pthread_create(&repliers[i], NULL, reply, NULL))
-			err(1, "pthread_create");
-	}
+	pthreads_create(queuers, queue, sizeof(queuers));
+	pthreads_create(repliers, reply, sizeof(repliers));
 
 	/* wait for threads */
-	for (i = 0; i < LEN(repliers); ++i) {
-		if (pthread_join(repliers[i], NULL))
-			warn("pthread_join");
-	}
+	pthreads_join(queuers, sizeof(queuers));
+	pthreads_join(repliers, sizeof(repliers));
 
 	close(lfd);
 
@@ -44,7 +62,7 @@ main(int32_t argc, char * const *argv)
 }
 
 void *
-reply(void *)
+queue(void *)
 {
 	int32_t afd;
 	struct Msg msg;
@@ -85,18 +103,48 @@ reply(void *)
 				break;
 			}
 
-			if (msg.op < LEN(OP_CHARS))
-				printf("%s %d %c %d\n", dst, msg.arg1, OP_CHARS[msg.op], msg.arg2);
-			else
-				printf("%s error", dst);
+			printMsg(dst, msg);
 
-			if (writeMsg(afd, msg))
-				break;
+			/* block if full */
+			pthread_mutex_lock(&mutexes[FULL]);
+			while ((tail + 1) % LEN(fifo) == head)
+				pthread_cond_wait(&conds[_FULL], &mutexes[FULL]);
+			pthread_mutex_unlock(&mutexes[FULL]);
+
+			/* add to circular queue */
+			pthread_mutex_lock(&mutexes[TAIL]);
+			fifo[tail].sfd = afd;
+			fifo[tail].msg = msg;
+			tail = (tail + 1) % LEN(fifo);
+			pthread_mutex_unlock(&mutexes[TAIL]);
+
+			pthread_cond_broadcast(&conds[_EMPTY]);
 		}
 
 		printf("%s %ld 1\n", dst, time(NULL));
 
 		close(afd);
+	}
+	return NULL;
+}
+
+void *
+reply(void *)
+{
+	for (;;) {
+		/* block if empty */
+		pthread_mutex_lock(&mutexes[EMPTY]);
+		while (head == tail)
+			pthread_cond_wait(&conds[_EMPTY], &mutexes[EMPTY]);
+		pthread_mutex_unlock(&mutexes[EMPTY]);
+
+		writeMsg(fifo[head].sfd, fifo[head].msg);
+
+		pthread_mutex_lock(&mutexes[HEAD]);
+		head = (head + 1) % LEN(fifo);
+		pthread_mutex_unlock(&mutexes[HEAD]);
+
+		pthread_cond_broadcast(&conds[_FULL]);
 	}
 	return NULL;
 }
