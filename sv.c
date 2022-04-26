@@ -12,8 +12,8 @@
 #include "net.h"
 #include "sv.h"
 
-void *reply(void *);
-void *queue(void *);
+void *reply();
+void *queue();
 void pthreads_create(pthread_t *, void *(*)(void *), size_t);
 void pthreads_join(pthread_t *, size_t);
 
@@ -62,7 +62,7 @@ main(int32_t argc, char * const *argv)
 }
 
 void *
-queue(void *)
+queue()
 {
 	int32_t afd;
 	struct Msg msg;
@@ -129,7 +129,7 @@ queue(void *)
 }
 
 void *
-reply(void *)
+reply()
 {
 	for (;;) {
 		/* block if empty */
