@@ -62,7 +62,7 @@ main(int32_t argc, char * const *argv)
 }
 
 void *
-queue(void *)
+queue(void *args __attribute__((unused)) )
 {
 	int32_t afd;
 	struct Msg msg;
@@ -129,7 +129,7 @@ queue(void *)
 }
 
 void *
-reply(void *)
+reply(void *args __attribute__((unused)))
 {
 	for (;;) {
 		/* block if empty */
