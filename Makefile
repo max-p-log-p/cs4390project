@@ -2,6 +2,7 @@ CC = cc
 CFLAGS = -Wall -Wextra -Werror -O2
 
 all: sv cl
+	./test.sh
 
 cl: cl.o net.o proc.o
 	$(CC) $(LDFLAGS) -o cl cl.o net.o proc.o
