@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#define REQUEST_STR "request:" //used to correctly differentiate between request and reply messages for more accurate printing
 struct Msg {
 	uint8_t op;
 	uint8_t arg1;
