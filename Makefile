@@ -1,10 +1,8 @@
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -O2
 
-all: sv cl run
-
-run:
-	gnome-terminal -e " ./sv 127.0.0.1"; ./cl 127.0.0.1 22; ./cl 127.0.0.1 22
+all: sv cl
+	./test.sh
 
 cl: cl.o net.o proc.o
 	$(CC) $(LDFLAGS) -o cl cl.o net.o proc.o
