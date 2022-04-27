@@ -160,17 +160,12 @@ acceptSocket(int32_t sockfd, char *dst, size_t size)
 void
 printMsg(const char *prefix, struct Msg msg, int8_t showResult)
 {
-	printf("%s ", prefix);
-
 	/* if the opcode is invalid print the opcode in hex for debugging */
-	if (msg.op < LEN(OP_CHARS))
-		printf("%d %c %d = ", msg.arg1, OP_CHARS[msg.op], msg.arg2);
-	else
-		printf("%d %x %d = ", msg.arg1, msg.op, msg.arg2);
-
-	/* if the result is invalid or not used print a question mark */
-	if (showResult)
-		printf("%d\n", msg.result);
-	else
-		puts("?");
+	if (msg.op < LEN(OP_CHARS)) {
+		if (showResult)
+			printf("%s %d %c %d = %d\n", prefix, msg.arg1, OP_CHARS[msg.op], msg.arg2, msg.result);
+		else
+			printf("%s %d %c %d = ?\n", prefix, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+	} else
+		printf("%s %d %x %d = ?\n", prefix, msg.arg1, msg.op, msg.arg2);
 }
