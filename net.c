@@ -160,7 +160,8 @@ acceptSocket(int32_t sockfd, char *dst, size_t size)
 void
 printMsg(const char *str, struct Msg msg)
 {
-	if (strcmp(str,REQUEST_STR)) //if they do not match, then print the result along with the calculation, otherwise print a question mark where the result should be
+	/* check if the opcode is invalid, if it is print the opcode in hex for debugging */
+	if (msg.op < LEN(OP_CHARS))
 		printf("%s %d %c %d = %d\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2, msg.result);
 	else
 		printf("%s %d %c %d = ?\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2);
