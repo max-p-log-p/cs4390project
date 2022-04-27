@@ -164,5 +164,5 @@ printMsg(const char *str, struct Msg msg)
 	if (msg.op < LEN(OP_CHARS))
 		printf("%s %d %c %d = %d\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2, msg.result);
 	else
-		printf("%s %d %c %d = ?\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+		printf(" %s %d %x %d = ?\n", str, msg.arg1, msg.op, msg.arg2);
 }
