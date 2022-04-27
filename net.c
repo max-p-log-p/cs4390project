@@ -160,8 +160,13 @@ acceptSocket(int32_t sockfd, char *dst, size_t size)
 void
 printMsg(const char *str, struct Msg msg)
 {
-	if (strcmp(str,REQUEST_STR)) //if they do not match, then print the result along with the calculation, otherwise print a question mark where the result should be
-		printf("%s %d %c %d = %d\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2, msg.result);
+	if(msg.op < LEN(OP_CHARS))
+	{
+		if (strcmp(str,REQUEST_STR)) //if they do not match, then print the result along with the calculation, otherwise print a question mark where the result should be
+			printf("%s %d %c %d = %d\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2, msg.result);
+		else
+			printf("%s %d %c %d = ?\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+	}
 	else
-		printf("%s %d %c %d = ?\n", str, msg.arg1, OP_CHARS[msg.op], msg.arg2);
+		printf(" %s %d %x %d = ?\n", str, msg.arg1, msg.op, msg.arg2);
 }
