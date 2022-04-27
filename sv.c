@@ -103,7 +103,7 @@ queue(void *args __attribute__((unused)) )
 				break;
 			}
 
-			printMsg(dst, msg);
+			printMsg(dst, msg, 1);
 
 			/* block if full */
 			pthread_mutex_lock(&mutexes[FULL]);

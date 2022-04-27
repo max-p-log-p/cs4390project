@@ -31,7 +31,7 @@ main(int32_t argc, char * const *argv)
 		msg.arg1 = rand() % (2 << CHAR_BIT);
 		msg.arg2 = rand() % (2 << CHAR_BIT);
 
-		printMsg("request:", msg);
+		printMsg("request:", msg, 0);
 
 		if (writeMsg(sfd, msg))
 			err(1, "writeMsg");
@@ -39,7 +39,7 @@ main(int32_t argc, char * const *argv)
 		if (readMsg(sfd, &msg))
 			err(1, "readMsg");
 
-		printMsg("reply:", msg);
+		printMsg("reply:", msg, 1);
 	}
 
 	close(sfd);
